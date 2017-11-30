@@ -80,5 +80,6 @@
                 </configuration>
             </plugin>
         </plugins>
+        <finalName>data-anon</finalName>
     </build>
 </project>

@@ -16,6 +16,7 @@ public class Anonymizer {
         new Whitelist(source, dest)
                 .table("MOVIES", table -> {
                     table.where("GENRE = 'Drama'");
+                    table.limit(1_00);
                     table.whitelist("MOVIE_ID", "RELEASE_DATE");
                     table.anonymize("TITLE").using((AnonymizationStrategy<String>) (field, record) -> "MY MOVIE " + record.getRowNum());
                     table.anonymize("GENRE").using(new FixedString("Action"));
@@ -26,7 +27,6 @@ public class Anonymizer {
                     table.anonymize("RATING").using(new FixedDouble(4.3));
                     return Unit.INSTANCE;
                 })
-                .execute(-1, true);
-
+                .execute(true);
     }
 }
