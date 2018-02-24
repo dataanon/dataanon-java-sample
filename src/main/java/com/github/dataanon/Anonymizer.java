@@ -8,6 +8,13 @@ import com.github.dataanon.strategy.string.FixedString;
 import kotlin.Unit;
 
 public class Anonymizer {
+
+    // Download and start H2 database server
+    // Connect to source (movies_source) database and execute create_tables.sql script
+    // Connect to destination (movies_dest) database and execute create_tables.sql script
+    // Insert sample data into source database tables using scripts insert_movies.sql and insert_ratings.sql
+    // Run this main program
+
     public static void main(String[] args) {
 
         DbConfig source = new DbConfig("jdbc:h2:tcp://localhost/~/movies_source", "sa", "");
