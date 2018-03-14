@@ -3,9 +3,13 @@ package com.github.dataanon;
 import com.github.dataanon.dsl.Whitelist;
 import com.github.dataanon.model.DbConfig;
 import com.github.dataanon.strategy.AnonymizationStrategy;
+import com.github.dataanon.strategy.datetime.DateRandomDelta;
+import com.github.dataanon.strategy.datetime.DateTimeRandomDelta;
+import com.github.dataanon.strategy.list.PickFromDatabase;
 import com.github.dataanon.strategy.number.FixedDouble;
-import com.github.dataanon.strategy.string.FixedString;
 import kotlin.Unit;
+
+import java.time.Duration;
 
 public class Anonymizer {
 
@@ -21,19 +25,22 @@ public class Anonymizer {
         DbConfig dest = new DbConfig("jdbc:h2:tcp://localhost/~/movies_dest", "sa", "");
 
         new Whitelist(source, dest)
-                .table("MOVIES", table -> {
-                    table.where("GENRE = 'Drama'");
-                    table.limit(1_00);
-                    table.whitelist("MOVIE_ID", "RELEASE_DATE");
-                    table.anonymize("TITLE").using((AnonymizationStrategy<String>) (field, record) -> "MY MOVIE " + record.getRowNum());
-                    table.anonymize("GENRE").using(new FixedString("Action"));
-                    return Unit.INSTANCE;
-                })
-                .table("RATINGS", table -> {
-                    table.whitelist("MOVIE_ID", "USER_ID", "CREATED_AT");
-                    table.anonymize("RATING").using(new FixedDouble(4.3));
-                    return Unit.INSTANCE;
-                })
-                .execute(true);
+            .table("MOVIES", table -> {
+                table.where("GENRE = 'Drama'");
+                table.limit(1_00);
+                table.whitelist("MOVIE_ID", "RELEASE_DATE");
+                table.anonymize("TITLE").using((AnonymizationStrategy<String>) (field, record) -> "MY MOVIE " + record.getRowNum());
+                table.anonymize("GENRE").using(new PickFromDatabase<String>(source,"SELECT DISTINCT GENRE FROM MOVIES"));
+                table.anonymize("RELEASE_DATE").using(new DateRandomDelta(10));
+                return Unit.INSTANCE;
+            })
+            .table("RATINGS", table -> {
+                table.whitelist("MOVIE_ID", "USER_ID", "CREATED_AT");
+                table.anonymize("RATING").using(new FixedDouble(4.3));
+                table.anonymize("CREATED_AT").using(new DateTimeRandomDelta(Duration.ofSeconds(2000)));
+
+                return Unit.INSTANCE;
+            })
+            .execute(true);
     }
 }
