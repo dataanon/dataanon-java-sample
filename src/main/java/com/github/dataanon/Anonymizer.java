@@ -6,6 +6,7 @@ import com.github.dataanon.strategy.AnonymizationStrategy;
 import com.github.dataanon.strategy.datetime.DateRandomDelta;
 import com.github.dataanon.strategy.datetime.DateTimeRandomDelta;
 import com.github.dataanon.strategy.list.PickFromDatabase;
+import com.github.dataanon.strategy.list.PickFromFile;
 import com.github.dataanon.strategy.number.FixedDouble;
 import kotlin.Unit;
 
@@ -26,21 +27,21 @@ public class Anonymizer {
 
         new Whitelist(source, dest)
             .table("MOVIES", table -> {
-                table.where("GENRE = 'Drama'");
+                table.where("GENRE IN ('Drama','Action')");
                 table.limit(1_00);
-                table.whitelist("MOVIE_ID", "RELEASE_DATE");
+                table.whitelist("MOVIE_ID");
                 table.anonymize("TITLE").using((AnonymizationStrategy<String>) (field, record) -> "MY MOVIE " + record.getRowNum());
                 table.anonymize("GENRE").using(new PickFromDatabase<String>(source,"SELECT DISTINCT GENRE FROM MOVIES"));
                 table.anonymize("RELEASE_DATE").using(new DateRandomDelta(10));
                 return Unit.INSTANCE;
             })
             .table("RATINGS", table -> {
-                table.whitelist("MOVIE_ID", "USER_ID", "CREATED_AT");
-                table.anonymize("RATING").using(new FixedDouble(4.3));
+                table.whitelist("MOVIE_ID", "USER_ID");
+                table.anonymize("RATING").using(new PickFromFile<Float>("/random-ratings.txt"));     //data file in resource folder
                 table.anonymize("CREATED_AT").using(new DateTimeRandomDelta(Duration.ofSeconds(2000)));
 
                 return Unit.INSTANCE;
             })
-            .execute(true);
+            .execute();
     }
 }
